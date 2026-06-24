@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Talk to your COO</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto;
+         padding: 0 16px; color: #1a1a1a; }
+  h1 { font-size: 20px; }
+  #log { border: 1px solid #ddd; border-radius: 10px; padding: 16px; min-height: 240px;
+         margin: 16px 0; }
+  .msg { margin: 10px 0; line-height: 1.5; }
+  .you { color: #555; }
+  .coo { color: #0a3; }
+  #row { display: flex; gap: 8px; }
+  input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+  button { padding: 10px 16px; border: none; border-radius: 8px; background: #1a1a1a;
+           color: #fff; font-size: 15px; cursor: pointer; }
+  button:disabled { opacity: 0.5; }
+</style>
+</head>
+<body>
+  <h1>Talk to your COO</h1>
+  <p>Type a message and your COO will reply, remembering past conversations.</p>
+  <div id="log"></div>
+  <div id="row">
+    <input id="box" placeholder="e.g. What should we work on first?" />
+    <button id="send">Send</button>
+  </div>
+
+<script>
+  // ---- IMPORTANT: paste your Render server address between the quotes below ----
+  // After you deploy on Render you'll get a URL like https://your-app.onrender.com
+  const SERVER_URL = "PASTE_YOUR_RENDER_URL_HERE";
+
+  const log = document.getElementById("log");
+  const box = document.getElementById("box");
+  const send = document.getElementById("send");
+
+  function add(text, who) {
+    const d = document.createElement("div");
+    d.className = "msg " + who;
+    d.textContent = (who === "you" ? "You: " : "COO: ") + text;
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  async function ask() {
+    const message = box.value.trim();
+    if (!message) return;
+    add(message, "you");
+    box.value = "";
+    send.disabled = true;
+    add("thinking...", "coo");
+    try {
+      const res = await fetch(SERVER_URL + "/coo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      log.lastChild.remove();
+      add(data.reply || data.error || "No response.", "coo");
+    } catch (e) {
+      log.lastChild.remove();
+      add("Could not reach the server. Check the SERVER_URL.", "coo");
+    }
+    send.disabled = false;
+  }
+
+  send.addEventListener("click", ask);
+  box.addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+</script>
+</body>
+</html>
