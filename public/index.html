@@ -6,7 +6,7 @@
 <title>Command Center</title>
 <style>
   body { margin: 0; }
-  #office-app { font-family: system-ui, -apple-system, sans-serif; max-width: 920px;
+  #office-app { font-family: system-ui, -apple-system, sans-serif; max-width: 1200px;
     margin: 0 auto; color: #1c1c1c; padding: 16px; }
   #office-app * { box-sizing: border-box; }
   .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-bottom: 16px; }
@@ -15,11 +15,15 @@
   .tab.active { color: #1c1c1c; border-bottom-color: #5b4ddb; font-weight: 600; }
   .panel { display: none; }
   .panel.active { display: block; }
+
+  .main-split { display: grid; grid-template-columns: 380px 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 820px) { .main-split { grid-template-columns: 1fr; } }
+
   #chat-log { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px;
-    height: 68vh; min-height: 420px; overflow-y: auto; margin-bottom: 14px; background: #fafafa; }
+    height: 70vh; min-height: 460px; overflow-y: auto; margin-bottom: 14px; background: #fafafa; }
   #history-log { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px;
-    height: 70vh; min-height: 420px; overflow-y: auto; background: #fafafa; }
-  .bubble { margin: 12px 0; line-height: 1.55; max-width: 90%; padding: 10px 14px;
+    height: 72vh; min-height: 460px; overflow-y: auto; background: #fafafa; }
+  .bubble { margin: 12px 0; line-height: 1.55; max-width: 92%; padding: 11px 15px;
     border-radius: 12px; white-space: pre-wrap; }
   .bubble.you { background: #5b4ddb; color: #fff; margin-left: auto; }
   .bubble.coo { background: #fff; border: 1px solid #e5e5e5; }
@@ -36,46 +40,53 @@
   .skip-btn { background: none; border: 1px solid #ccc; border-radius: 8px;
     padding: 8px 16px; cursor: pointer; font-size: 14px; margin-left: 8px; }
   .input-row { display: flex; gap: 8px; align-items: flex-end; }
-  #chat-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 10px;
-    font-size: 15px; resize: vertical; min-height: 52px; font-family: inherit; }
-  .btn { padding: 12px 16px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; }
+  #chat-box { flex: 1; padding: 14px; border: 1px solid #ccc; border-radius: 10px;
+    font-size: 15px; resize: vertical; min-height: 72px; font-family: inherit; }
+  .btn { padding: 14px 18px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; }
   .btn-send { background: #1c1c1c; color: #fff; }
-  .btn-mic { background: #eee; color: #1c1c1c; font-size: 18px; width: 48px; height: 48px; }
+  .btn-mic { background: #eee; color: #1c1c1c; font-size: 18px; width: 52px; height: 52px; }
   .btn-mic.listening { background: #ff4d4d; color: #fff; }
   .btn:disabled { opacity: 0.5; cursor: default; }
 
   .office-grid { background: linear-gradient(#f4f3f8, #ecebf5); border-radius: 16px;
-    padding: 26px; position: relative; overflow: hidden; }
-  .desk { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 16px;
+    padding: 20px; position: relative; overflow: hidden; position: sticky; top: 16px; }
+  .desk { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 12px;
     text-align: center; transition: transform .25s, box-shadow .25s, border-color .25s; position: relative; }
-  .desk.active { border-color: #5b4ddb; box-shadow: 0 6px 22px rgba(91,77,219,0.22);
-    transform: translateY(-4px); }
-  .avatar { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;
-    display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform .25s; }
+  .desk.active { border-color: #5b4ddb; box-shadow: 0 6px 22px rgba(91,77,219,0.22); transform: translateY(-4px); }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 24px; transition: transform .25s; }
   .desk.active .avatar { animation: bob .9s ease-in-out infinite; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-  .desk .role { font-weight: 600; font-size: 15px; }
-  .desk .sub { font-size: 12px; color: #888; }
-  .desk .pill { display: inline-block; margin-top: 8px; font-size: 11px; padding: 3px 10px;
+  .desk .role { font-weight: 600; font-size: 14px; }
+  .desk .sub { font-size: 11px; color: #888; }
+  .desk .pill { display: inline-block; margin-top: 6px; font-size: 10px; padding: 3px 9px;
     border-radius: 99px; background: #eee; color: #666; }
   .desk.active .pill { background: #ede9ff; color: #5b4ddb; }
-  .speech { position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
-    background: #1c1c1c; color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 10px;
+  .speech { position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: #1c1c1c; color: #fff; font-size: 10px; padding: 3px 9px; border-radius: 10px;
     white-space: nowrap; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .desk.active .speech { opacity: 1; }
-  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 30px; }
+  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 26px; }
   .coo-wrap { display: flex; justify-content: center; }
-  .arrow-down { text-align: center; color: #b0a8e0; font-size: 22px; margin: 8px 0; }
-  .token { position: absolute; width: 14px; height: 14px; border-radius: 50%;
-    background: #5b4ddb; opacity: 0; pointer-events: none; z-index: 5; }
-  .token.fly { animation: fly 1s ease-in-out forwards; }
-  @keyframes fly { 0% { opacity: 1; } 100% { opacity: 0; } }
-  .note { font-size: 13px; color: #999; margin-top: 16px; text-align: center; }
-  .day-head { font-size: 13px; font-weight: 600; color: #5b4ddb; margin: 18px 0 8px;
-    border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; }
-  .hist-row { font-size: 13px; line-height: 1.5; margin: 6px 0; padding: 8px 10px;
-    border-radius: 8px; background: #fff; border: 1px solid #eee; white-space: pre-wrap; }
-  .hist-agent { font-weight: 600; font-size: 11px; text-transform: uppercase; color: #888; }
+  .arrow-down { text-align: center; color: #b0a8e0; font-size: 20px; margin: 6px 0; }
+  .token { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: #5b4ddb;
+    opacity: 0; pointer-events: none; z-index: 5; }
+  .note { font-size: 12px; color: #999; margin-top: 12px; text-align: center; }
+  .day-head { font-size: 13px; font-weight: 600; color: #5b4ddb; margin: 22px 0 10px;
+    text-align: center; }
+  .day-head span { background: #ece9f6; padding: 4px 14px; border-radius: 99px; }
+  .hist-bubble { max-width: 78%; margin: 8px 0; padding: 10px 14px; border-radius: 14px;
+    font-size: 13px; line-height: 1.5; white-space: pre-wrap; clear: both; }
+  .hist-bubble .hist-agent { font-weight: 600; font-size: 11px; display: block; margin-bottom: 3px; }
+  .hist-bubble.owner { background: #5b4ddb; color: #fff; margin-left: auto; }
+  .hist-bubble.coo { background: #ede9ff; border: 1px solid #cfc6f5; color: #2c2461; margin-right: auto; }
+  .hist-bubble.rnd { background: #faece7; border: 1px solid #f0c4b3; color: #712b13; margin-right: auto; }
+  .hist-bubble.engineer { background: #e1f5ee; border: 1px solid #b3e0cf; color: #085041; margin-right: auto; }
+  .hist-bubble.marketing { background: #e6f1fb; border: 1px solid #b5d4f4; color: #0c447c; margin-right: auto; }
+  .desk.coo-desk { border-top: 4px solid #5b4ddb; }
+  .desk.rnd-desk { border-top: 4px solid #d85a30; }
+  .desk.engineer-desk { border-top: 4px solid #1d9e75; }
+  .desk.marketing-desk { border-top: 4px solid #378add; }
   .refresh-btn { background: none; border: 1px solid #ccc; border-radius: 8px;
     padding: 6px 12px; cursor: pointer; font-size: 13px; margin-bottom: 10px; }
 </style>
@@ -93,57 +104,58 @@
 
 <div id="office-app" style="display:none;">
   <div class="tabs">
-    <button class="tab active" data-panel="chat">Chat</button>
-    <button class="tab" data-panel="office">Office</button>
+    <button class="tab active" data-panel="main">Command Center</button>
     <button class="tab" data-panel="history">History</button>
   </div>
 
-  <div class="panel active" id="panel-chat">
-    <div id="chat-log"></div>
-    <div class="input-row">
-      <button class="btn btn-mic" id="mic" title="Click and speak">&#127908;</button>
-      <textarea id="chat-box" rows="2" placeholder="Give your COO a goal..."></textarea>
-      <button class="btn btn-send" id="send">Send</button>
-    </div>
-    <div class="note" id="mic-note"></div>
-  </div>
+  <div class="panel active" id="panel-main">
+    <div class="main-split">
+      <div class="office-grid" id="office-grid">
+        <div class="coo-wrap">
+          <div class="desk active coo-desk" id="desk-coo" style="width:100%;max-width:220px;">
+            <div class="speech" id="speech-coo">online</div>
+            <div class="avatar" style="background:#ede9ff;">&#128104;&#8205;&#128188;</div>
+            <div class="role">COO</div>
+            <div class="sub">Runs the company</div>
+            <div class="pill" id="pill-coo">online</div>
+          </div>
+        </div>
+        <div class="arrow-down">&#8595;</div>
+        <div class="team-row">
+          <div class="desk rnd-desk" id="desk-rnd">
+            <div class="speech" id="speech-rnd">researching</div>
+            <div class="avatar" style="background:#faece7;">&#128161;</div>
+            <div class="role">R&amp;D</div>
+            <div class="sub">Finds what sells</div>
+            <div class="pill" id="pill-rnd">idle</div>
+          </div>
+          <div class="desk engineer-desk" id="desk-engineer">
+            <div class="speech" id="speech-engineer">designing</div>
+            <div class="avatar" style="background:#e1f5ee;">&#128296;</div>
+            <div class="role">Engineer</div>
+            <div class="sub">Designs</div>
+            <div class="pill" id="pill-engineer">idle</div>
+          </div>
+          <div class="desk marketing-desk" id="desk-marketing">
+            <div class="speech" id="speech-marketing">writing</div>
+            <div class="avatar" style="background:#e6f1fb;">&#128226;</div>
+            <div class="role">Marketing</div>
+            <div class="sub">Listings</div>
+            <div class="pill" id="pill-marketing">idle</div>
+          </div>
+        </div>
+        <div class="note">Your team works here as you chat.</div>
+      </div>
 
-  <div class="panel" id="panel-office">
-    <div class="office-grid" id="office-grid">
-      <div class="coo-wrap">
-        <div class="desk active" id="desk-coo" style="width:240px;">
-          <div class="speech" id="speech-coo">online</div>
-          <div class="avatar" style="background:#ede9ff;">&#128104;&#8205;&#128188;</div>
-          <div class="role">COO</div>
-          <div class="sub">Runs the company</div>
-          <div class="pill" id="pill-coo">online</div>
+      <div>
+        <div id="chat-log"></div>
+        <div class="input-row">
+          <button class="btn btn-mic" id="mic" title="Click and speak">&#127908;</button>
+          <textarea id="chat-box" rows="3" placeholder="Give your COO a goal..."></textarea>
+          <button class="btn btn-send" id="send">Send</button>
         </div>
+        <div class="note" id="mic-note"></div>
       </div>
-      <div class="arrow-down">&#8595;</div>
-      <div class="team-row">
-        <div class="desk" id="desk-rnd">
-          <div class="speech" id="speech-rnd">researching</div>
-          <div class="avatar" style="background:#faece7;">&#128161;</div>
-          <div class="role">R&amp;D</div>
-          <div class="sub">Finds what sells</div>
-          <div class="pill" id="pill-rnd">idle</div>
-        </div>
-        <div class="desk" id="desk-engineer">
-          <div class="speech" id="speech-engineer">designing</div>
-          <div class="avatar" style="background:#e1f5ee;">&#128296;</div>
-          <div class="role">Engineer</div>
-          <div class="sub">Designs products</div>
-          <div class="pill" id="pill-engineer">idle</div>
-        </div>
-        <div class="desk" id="desk-marketing">
-          <div class="speech" id="speech-marketing">writing</div>
-          <div class="avatar" style="background:#e6f1fb;">&#128226;</div>
-          <div class="role">Marketing</div>
-          <div class="sub">Writes listings</div>
-          <div class="pill" id="pill-marketing">idle</div>
-        </div>
-      </div>
-      <div class="note">Give the COO a goal in the Chat tab. Desks come alive as each agent works.</div>
     </div>
   </div>
 
@@ -228,6 +240,8 @@
     function setPill(agent, text) {
       const p = app.querySelector("#pill-" + agent);
       if (p) p.textContent = text;
+      const s = app.querySelector("#speech-" + agent);
+      if (s && text) s.textContent = text;
     }
     function resetDesks() {
       ["rnd","engineer","marketing"].forEach(a => setPill(a, "idle"));
@@ -348,16 +362,28 @@
         hist.innerHTML = "";
         Object.keys(byDay).sort().reverse().forEach(day => {
           const h = document.createElement("div");
-          h.className = "day-head"; h.textContent = day;
+          h.className = "day-head";
+          h.innerHTML = '<span></span>';
+          h.querySelector("span").textContent = day;
           hist.appendChild(h);
           byDay[day].forEach(it => {
-            const row = document.createElement("div");
-            row.className = "hist-row";
-            const who = it.agent ? (names[it.agent] || it.agent) : "Owner";
-            const ownerLine = it.user ? "Owner: " + it.user + "\n" : "";
-            row.innerHTML = '<span class="hist-agent">' + who + '</span>\n';
-            row.appendChild(document.createTextNode(ownerLine + (it.text || it.coo || "")));
-            hist.appendChild(row);
+            // If the owner spoke, show their message as its own right-side bubble first.
+            if (it.user) {
+              const ob = document.createElement("div");
+              ob.className = "hist-bubble owner";
+              ob.innerHTML = '<span class="hist-agent">You</span>';
+              ob.appendChild(document.createTextNode(it.user));
+              hist.appendChild(ob);
+            }
+            const agent = it.agent || "coo";
+            const body = it.text || it.coo || "";
+            if (body) {
+              const row = document.createElement("div");
+              row.className = "hist-bubble " + agent;
+              row.innerHTML = '<span class="hist-agent">' + (names[agent] || agent) + '</span>';
+              row.appendChild(document.createTextNode(body));
+              hist.appendChild(row);
+            }
           });
         });
       } catch (e) { hist.innerHTML = '<div class="note">Could not load history.</div>'; }
