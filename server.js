@@ -99,9 +99,22 @@ app.get("/health", (req, res) => {
 
 // The main endpoint: your office page sends a message here, the COO replies.
 app.post("/coo", async (req, res) => {
+  // Password check: every COO request must include the correct shared password.
+  // The real password lives in Render settings as PORTAL_PASSWORD (kept secret).
+  const provided = (req.body && req.body.password) || "";
+  if (!process.env.PORTAL_PASSWORD || provided !== process.env.PORTAL_PASSWORD) {
+    return res.status(401).json({ error: "Wrong or missing password." });
+  }
+
   const userMessage = (req.body && req.body.message || "").trim();
   if (!userMessage) {
     return res.status(400).json({ error: "No message provided." });
+  }
+
+  // Special case: the portal sends this just to verify the password. The
+  // password already passed the check above, so confirm without calling Claude.
+  if (userMessage === "__unlock_check__") {
+    return res.json({ ok: true });
   }
   if (!process.env.ANTHROPIC_API_KEY) {
     return res.status(500).json({
@@ -148,8 +161,13 @@ app.post("/coo", async (req, res) => {
   }
 });
 
-// Lets you view the whole memory (handy for checking what the COO remembers).
+// Lets you view the whole memory. Protected by the same password.
+// Use it like: /memory?password=YOUR_PASSWORD
 app.get("/memory", (req, res) => {
+  const provided = req.query.password || "";
+  if (!process.env.PORTAL_PASSWORD || provided !== process.env.PORTAL_PASSWORD) {
+    return res.status(401).json({ error: "Wrong or missing password." });
+  }
   res.json(loadMemory());
 });
 
