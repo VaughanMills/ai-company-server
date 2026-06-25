@@ -81,7 +81,16 @@ research trends or write the sales listing; you design.`,
 finished product concept, you write the sales listing: an Etsy/Shopify title,
 a description, relevant keywords/tags, and a suggested price. You have live web
 access - use it to check what keywords and pricing real successful listings use.
-Be specific and ready-to-publish. You do not research product ideas or design.`,
+Be specific and ready-to-publish. You do not research product ideas or design.
+
+STRICT RULES:
+- NEVER invent customer reviews, testimonials, ratings, or any social proof.
+  The product has no reviews yet. Do not include a "from happy customers" or
+  similar section. Fabricated reviews violate Etsy policy.
+- ALWAYS finish with a clear recommended retail price and a one-line
+  justification. Never leave the price blank or unfinished.
+- Provide exactly: (1) title, (2) description, (3) 13 tags, (4) price. Complete
+  all four before ending.`,
 };
 
 const MEMORY_DIR = process.env.MEMORY_DIR || "./data";
