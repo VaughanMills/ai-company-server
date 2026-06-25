@@ -11,47 +11,53 @@
   #office-app * { box-sizing: border-box; }
   .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
   .tab { padding: 12px 20px; cursor: pointer; border: none; background: none;
-    font-size: 15px; color: #888; border-bottom: 2px solid transparent;
-    margin-bottom: -2px; }
+    font-size: 15px; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; }
   .tab.active { color: #1c1c1c; border-bottom-color: #5b4ddb; font-weight: 600; }
   .panel { display: none; }
   .panel.active { display: block; }
   #chat-log { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px;
-    min-height: 300px; max-height: 440px; overflow-y: auto; margin-bottom: 14px;
-    background: #fafafa; }
-  .bubble { margin: 12px 0; line-height: 1.55; max-width: 85%; padding: 10px 14px;
-    border-radius: 12px; }
+    min-height: 320px; max-height: 480px; overflow-y: auto; margin-bottom: 14px; background: #fafafa; }
+  .bubble { margin: 12px 0; line-height: 1.55; max-width: 90%; padding: 10px 14px;
+    border-radius: 12px; white-space: pre-wrap; }
   .bubble.you { background: #5b4ddb; color: #fff; margin-left: auto; }
   .bubble.coo { background: #fff; border: 1px solid #e5e5e5; }
-  .bubble .who { font-size: 11px; opacity: 0.7; display: block; margin-bottom: 3px; }
+  .bubble.rnd { background: #faece7; border: 1px solid #f0c4b3; }
+  .bubble.engineer { background: #e1f5ee; border: 1px solid #b3e0cf; }
+  .bubble.marketing { background: #e6f1fb; border: 1px solid #b5d4f4; }
+  .bubble .who { font-size: 11px; font-weight: 600; opacity: 0.8; display: block; margin-bottom: 3px; }
+  .approve-box { background: #fffbe6; border: 1px solid #f0d98a; border-radius: 12px;
+    padding: 14px; margin: 12px 0; }
+  .approve-box .label { font-size: 12px; color: #8a6d1a; font-weight: 600; }
+  .approve-box .task { font-size: 14px; margin: 6px 0 10px; }
+  .approve-btn { background: #1c1c1c; color: #fff; border: none; border-radius: 8px;
+    padding: 8px 16px; cursor: pointer; font-size: 14px; }
+  .skip-btn { background: none; border: 1px solid #ccc; border-radius: 8px;
+    padding: 8px 16px; cursor: pointer; font-size: 14px; margin-left: 8px; }
   .input-row { display: flex; gap: 8px; align-items: center; }
-  #chat-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 10px;
-    font-size: 15px; }
-  .btn { padding: 12px 16px; border: none; border-radius: 10px; cursor: pointer;
-    font-size: 15px; }
+  #chat-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 15px; }
+  .btn { padding: 12px 16px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; }
   .btn-send { background: #1c1c1c; color: #fff; }
   .btn-mic { background: #eee; color: #1c1c1c; font-size: 18px; width: 48px; }
   .btn-mic.listening { background: #ff4d4d; color: #fff; }
   .btn:disabled { opacity: 0.5; cursor: default; }
   .office-grid { background: #f4f3f8; border-radius: 16px; padding: 22px; }
-  .desk { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px;
-    padding: 16px; text-align: center; transition: border 0.2s, box-shadow 0.2s; }
+  .desk { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 16px;
+    text-align: center; transition: border 0.2s, box-shadow 0.2s; }
   .desk.active { border-color: #5b4ddb; box-shadow: 0 0 0 3px rgba(91,77,219,0.15); }
   .avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 10px;
     display: flex; align-items: center; justify-content: center; font-size: 26px; }
   .desk .role { font-weight: 600; font-size: 15px; }
   .desk .sub { font-size: 12px; color: #888; }
-  .desk .pill { display: inline-block; margin-top: 8px; font-size: 11px;
-    padding: 3px 10px; border-radius: 99px; background: #eee; color: #666; }
-  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
-    margin-top: 14px; }
+  .desk .pill { display: inline-block; margin-top: 8px; font-size: 11px; padding: 3px 10px;
+    border-radius: 99px; background: #eee; color: #666; }
+  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
   .arrow-down { text-align: center; color: #bbb; font-size: 20px; margin: 6px 0; }
   .note { font-size: 13px; color: #999; margin-top: 14px; text-align: center; }
 </style>
 </head>
 <body>
 <div id="lock-screen" style="max-width:360px;margin:80px auto;font-family:system-ui,sans-serif;text-align:center;">
-  <div style="font-size:40px;margin-bottom:8px;">🔒</div>
+  <div style="font-size:40px;margin-bottom:8px;">&#128274;</div>
   <h2 style="font-weight:600;">Command Center</h2>
   <p style="color:#888;font-size:14px;">Enter the password to continue.</p>
   <input id="pw-box" type="password" placeholder="Password"
@@ -69,8 +75,8 @@
   <div class="panel active" id="panel-chat">
     <div id="chat-log"></div>
     <div class="input-row">
-      <button class="btn btn-mic" id="mic" title="Click and speak">🎤</button>
-      <input id="chat-box" placeholder="Talk or type to your COO..." />
+      <button class="btn btn-mic" id="mic" title="Click and speak">&#127908;</button>
+      <input id="chat-box" placeholder="Give your COO a goal..." />
       <button class="btn btn-send" id="send">Send</button>
     </div>
     <div class="note" id="mic-note"></div>
@@ -79,46 +85,43 @@
   <div class="panel" id="panel-office">
     <div class="office-grid">
       <div class="desk active" id="desk-coo" style="max-width:240px;margin:0 auto;">
-        <div class="avatar" style="background:#ede9ff;">👔</div>
+        <div class="avatar" style="background:#ede9ff;">&#128104;&#8205;&#128188;</div>
         <div class="role">COO</div>
         <div class="sub">Runs the company</div>
         <div class="pill" id="pill-coo">online</div>
       </div>
-      <div class="arrow-down">↓</div>
+      <div class="arrow-down">&#8595;</div>
       <div class="team-row">
-        <div class="desk" id="desk-eng">
-          <div class="avatar" style="background:#e1f5ee;">🛠️</div>
-          <div class="role">Engineer</div>
-          <div class="sub">Builds products</div>
-          <div class="pill">coming soon</div>
-        </div>
         <div class="desk" id="desk-rnd">
-          <div class="avatar" style="background:#faece7;">💡</div>
-          <div class="role">R&D</div>
+          <div class="avatar" style="background:#faece7;">&#128161;</div>
+          <div class="role">R&amp;D</div>
           <div class="sub">Finds what sells</div>
-          <div class="pill">coming soon</div>
+          <div class="pill" id="pill-rnd">idle</div>
         </div>
-        <div class="desk" id="desk-legal">
-          <div class="avatar" style="background:#eee;">⚖️</div>
-          <div class="role">Legal</div>
-          <div class="sub">Reviews everything</div>
-          <div class="pill">locked</div>
+        <div class="desk" id="desk-engineer">
+          <div class="avatar" style="background:#e1f5ee;">&#128296;</div>
+          <div class="role">Engineer</div>
+          <div class="sub">Designs products</div>
+          <div class="pill" id="pill-engineer">idle</div>
+        </div>
+        <div class="desk" id="desk-marketing">
+          <div class="avatar" style="background:#e6f1fb;">&#128226;</div>
+          <div class="role">Marketing</div>
+          <div class="sub">Writes listings</div>
+          <div class="pill" id="pill-marketing">idle</div>
         </div>
       </div>
-      <div class="note">Right now the COO is live. The team joins next.</div>
+      <div class="note">Give the COO a goal in the Chat tab. It will propose
+        steps for you to approve, and the desks light up as each agent works.</div>
     </div>
   </div>
 </div>
 
 <script>
 (function () {
-  // The page is served BY the server, so it talks to its own address.
   const SERVER_URL = window.location.origin;
-
-  // Holds the shared password once the user enters it.
   let PORTAL_PASSWORD = "";
 
-  // --- Lock screen: reveal the app only after a correct password ---
   const lockScreen = document.getElementById("lock-screen");
   const pwBox = document.getElementById("pw-box");
   const pwGo = document.getElementById("pw-go");
@@ -130,104 +133,147 @@
     if (!pw) return;
     pwError.textContent = "Checking...";
     try {
-      // We verify the password by making a tiny test call to the server.
       const res = await fetch(SERVER_URL + "/coo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: pw, message: "__unlock_check__" })
       });
-      if (res.status === 401) {
-        pwError.textContent = "Wrong password.";
-        return;
-      }
-      // Correct password — unlock.
+      if (res.status === 401) { pwError.textContent = "Wrong password."; return; }
       PORTAL_PASSWORD = pw;
       lockScreen.style.display = "none";
       appEl.style.display = "block";
       startApp();
-    } catch (e) {
-      pwError.textContent = "Could not reach the server.";
-    }
+    } catch (e) { pwError.textContent = "Could not reach the server."; }
   }
   pwGo.addEventListener("click", tryUnlock);
   pwBox.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
 
   function startApp() {
-  const app = document.getElementById("office-app");
-  const tabs = app.querySelectorAll(".tab");
-  tabs.forEach(t => t.addEventListener("click", () => {
-    tabs.forEach(x => x.classList.remove("active"));
-    app.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-    t.classList.add("active");
-    app.querySelector("#panel-" + t.dataset.panel).classList.add("active");
-  }));
+    const app = document.getElementById("office-app");
+    const tabs = app.querySelectorAll(".tab");
+    tabs.forEach(t => t.addEventListener("click", () => {
+      tabs.forEach(x => x.classList.remove("active"));
+      app.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      t.classList.add("active");
+      app.querySelector("#panel-" + t.dataset.panel).classList.add("active");
+    }));
 
-  const log = app.querySelector("#chat-log");
-  const box = app.querySelector("#chat-box");
-  const send = app.querySelector("#send");
-  const cooDesk = app.querySelector("#desk-coo");
-  const cooPill = app.querySelector("#pill-coo");
+    const log = app.querySelector("#chat-log");
+    const box = app.querySelector("#chat-box");
+    const send = app.querySelector("#send");
 
-  function add(text, who) {
-    const d = document.createElement("div");
-    d.className = "bubble " + who;
-    d.innerHTML = '<span class="who">' + (who === "you" ? "You" : "COO") + '</span>';
-    d.appendChild(document.createTextNode(text));
-    log.appendChild(d);
-    log.scrollTop = log.scrollHeight;
-    return d;
-  }
+    const names = { coo: "COO", rnd: "R&D", engineer: "Engineer", marketing: "Marketing" };
 
-  async function ask() {
-    const message = box.value.trim();
-    if (!message) return;
-    add(message, "you");
-    box.value = "";
-    send.disabled = true;
-    cooPill.textContent = "thinking..."; cooDesk.classList.add("active");
-    const placeholder = add("thinking...", "coo");
-    try {
-      const res = await fetch(SERVER_URL + "/coo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: PORTAL_PASSWORD, message })
-      });
-      const data = await res.json();
-      placeholder.remove();
-      add(data.reply || data.error || "No response.", "coo");
-    } catch (e) {
-      placeholder.remove();
-      add("Could not reach the server.", "coo");
+    function setDesk(agent, state) {
+      const desk = app.querySelector("#desk-" + agent);
+      const pill = app.querySelector("#pill-" + agent);
+      if (pill) pill.textContent = state;
+      if (!desk) return;
+      app.querySelectorAll(".desk").forEach(d => d.classList.remove("active"));
+      if (state === "working" || state === "thinking") desk.classList.add("active");
+      else app.querySelector("#desk-coo").classList.add("active");
     }
-    send.disabled = false;
-    cooPill.textContent = "online";
+
+    function add(text, who) {
+      const d = document.createElement("div");
+      d.className = "bubble " + who;
+      const label = who === "you" ? "You" : (names[who] || who);
+      d.innerHTML = '<span class="who">' + label + '</span>';
+      d.appendChild(document.createTextNode(text));
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+      return d;
+    }
+
+    function showApproval(delegation) {
+      const wrap = document.createElement("div");
+      wrap.className = "approve-box";
+      wrap.innerHTML =
+        '<div class="label">COO proposes &#8594; ' + (names[delegation.to] || delegation.to) + '</div>' +
+        '<div class="task"></div>';
+      wrap.querySelector(".task").textContent = delegation.task;
+      const approve = document.createElement("button");
+      approve.className = "approve-btn"; approve.textContent = "Approve";
+      const skip = document.createElement("button");
+      skip.className = "skip-btn"; skip.textContent = "Not now";
+      wrap.appendChild(approve); wrap.appendChild(skip);
+      log.appendChild(wrap);
+      log.scrollTop = log.scrollHeight;
+
+      approve.addEventListener("click", async () => {
+        wrap.remove();
+        await runApproval(delegation);
+      });
+      skip.addEventListener("click", () => { wrap.remove(); });
+    }
+
+    async function runApproval(delegation) {
+      setDesk(delegation.to, "working");
+      const ph = add(names[delegation.to] + " is working...", delegation.to);
+      send.disabled = true;
+      try {
+        const res = await fetch(SERVER_URL + "/approve", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: PORTAL_PASSWORD, to: delegation.to, task: delegation.task })
+        });
+        const data = await res.json();
+        ph.remove();
+        if (data.error) { add(data.error, "coo"); }
+        else {
+          add(data.workerReply, delegation.to);
+          setDesk("coo", "thinking");
+          add(data.cooReply, "coo");
+          if (data.delegation) showApproval(data.delegation);
+        }
+      } catch (e) { ph.remove(); add("Something went wrong running that step.", "coo"); }
+      setDesk("coo", "online");
+      ["rnd","engineer","marketing"].forEach(a => setDesk(a, "idle"));
+      app.querySelector("#desk-coo").classList.add("active");
+      send.disabled = false;
+    }
+
+    async function ask() {
+      const message = box.value.trim();
+      if (!message) return;
+      add(message, "you");
+      box.value = "";
+      send.disabled = true;
+      setDesk("coo", "thinking");
+      const ph = add("COO is thinking...", "coo");
+      try {
+        const res = await fetch(SERVER_URL + "/coo", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: PORTAL_PASSWORD, message })
+        });
+        const data = await res.json();
+        ph.remove();
+        add(data.reply || data.error || "No response.", "coo");
+        if (data.delegation) showApproval(data.delegation);
+      } catch (e) { ph.remove(); add("Could not reach the server.", "coo"); }
+      setDesk("coo", "online");
+      send.disabled = false;
+    }
+
+    send.addEventListener("click", ask);
+    box.addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+
+    const mic = app.querySelector("#mic");
+    const micNote = app.querySelector("#mic-note");
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { mic.disabled = true; micNote.textContent = "Voice input needs Chrome."; }
+    else {
+      const recog = new SR();
+      recog.lang = "en-US"; recog.interimResults = false;
+      let listening = false;
+      mic.addEventListener("click", () => { if (listening) { recog.stop(); return; } recog.start(); });
+      recog.onstart = () => { listening = true; mic.classList.add("listening");
+        micNote.textContent = "Listening... click the mic again to stop."; };
+      recog.onend = () => { listening = false; mic.classList.remove("listening"); micNote.textContent = ""; };
+      recog.onerror = () => { micNote.textContent = "Didn't catch that. Try again."; };
+      recog.onresult = (ev) => { box.value = ev.results[0][0].transcript; ask(); };
+    }
+
+    add("Hi - I'm your COO. Give me a goal, like \"find a product we could sell to dog owners,\" and I'll put the team to work.", "coo");
   }
-
-  send.addEventListener("click", ask);
-  box.addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
-
-  const mic = app.querySelector("#mic");
-  const micNote = app.querySelector("#mic-note");
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    mic.disabled = true;
-    micNote.textContent = "Voice input isn't supported in this browser. Try Chrome.";
-  } else {
-    const recog = new SR();
-    recog.lang = "en-US";
-    recog.interimResults = false;
-    let listening = false;
-    mic.addEventListener("click", () => { if (listening) { recog.stop(); return; } recog.start(); });
-    recog.onstart = () => { listening = true; mic.classList.add("listening");
-      micNote.textContent = "Listening... click the mic again to stop."; };
-    recog.onend = () => { listening = false; mic.classList.remove("listening");
-      micNote.textContent = ""; };
-    recog.onerror = () => { micNote.textContent = "Didn't catch that. Try again."; };
-    recog.onresult = (ev) => { box.value = ev.results[0][0].transcript; ask(); };
-  }
-
-  add("Hi — I'm your COO. Ask me anything about the business.", "coo");
-  } // end startApp
 })();
 </script>
 </body>
