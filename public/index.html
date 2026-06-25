@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   body { margin: 0; }
   #office-app { font-family: system-ui, -apple-system, sans-serif; max-width: 1200px;
@@ -90,8 +91,11 @@
   .desk.marketing-desk { border-top: 4px solid #378add; }
   .refresh-btn { background: none; border: 1px solid #ccc; border-radius: 8px;
     padding: 6px 12px; cursor: pointer; font-size: 13px; margin-bottom: 10px; }
-  @keyframes type { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-1px);} }
+  @keyframes type { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-1.5px);} }
+  @keyframes typearm { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-1px);} }
   @keyframes lean { 0%,100%{transform:translateX(0);} 50%{transform:translateX(2px);} }
+  @keyframes paint { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-1px);} }
+  @keyframes step { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-1.5px);} }
 </style>
 </head>
 <body>
@@ -182,12 +186,13 @@
     const send = app.querySelector("#send");
     const names = { coo: "COO", rnd: "R&D", engineer: "Engineer", marketing: "Marketing" };
 
-    // ---- Pixel office scene ----
+    // ---- Pixel office scene (final) ----
     const NS = "http://www.w3.org/2000/svg";
     const stage = app.querySelector("#stage");
     const shirts = { coo:"#7f77dd", rnd:"#e06a2c", engineer:"#1d9e75", marketing:"#3b8bd4" };
-    const homes = { coo:[55,118], rnd:[235,52], engineer:[235,130], marketing:[235,208] };
-    const standby = { rnd:[200,52], engineer:[200,130], marketing:[200,208] };
+    const homes = { coo:[50,118] };
+    const deskSpot = { rnd:[250,52], engineer:[250,130], marketing:[250,208] };
+    const HALL_X = 190;
 
     function px(p,x,y,w,h,f){ const r=document.createElementNS(NS,"rect");
       r.setAttribute("x",x);r.setAttribute("y",y);r.setAttribute("width",w);r.setAttribute("height",h);
@@ -195,93 +200,114 @@
     function stxt(p,x,y,s,f,c){ const t=document.createElementNS(NS,"text");
       t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("font-size",s);
       t.setAttribute("text-anchor","middle");t.setAttribute("fill",c||"#fff");
-      t.setAttribute("font-family","monospace");t.textContent=f;p.appendChild(t);return t; }
+      t.setAttribute("font-family",'"Press Start 2P", monospace');t.textContent=f;p.appendChild(t);return t; }
 
-    function buildOffice() {
+    function buildOffice(){
       px(stage,0,0,330,240,"#d8c4a0");
-      for(let y=0;y<240;y+=16){ px(stage,0,y,330,16,(y/16)%2?"#d4bf99":"#dac6a4");
-        px(stage,0,y+15,330,1,"#c7b38c"); }
-      for(let y=0;y<240;y+=16){ const off=((y/16)%2)?40:0;
-        for(let x=off;x<330;x+=80) px(stage,x,y,1,15,"#c7b38c"); }
-      px(stage,8,8,120,150,"#0000000f");
-      px(stage,8,8,120,5,"#4a5a7a");px(stage,8,8,5,150,"#4a5a7a");
-      px(stage,123,8,5,150,"#4a5a7a");
-      px(stage,8,120,5,38,"#4a5a7a");px(stage,90,153,38,5,"#4a5a7a");
-      stxt(stage,55,24,9,"COO OFFICE","#4a5a7a");
-      px(stage,40,55,46,18,"#8a6a44");px(stage,40,73,46,5,"#6b4f30");
-      px(stage,52,40,22,14,"#2f3540");px(stage,55,43,16,8,"#7fd4ff");
-      cubicle(210,10,"R&D","#b8552a");
-      cubicle(210,88,"ENGINEER","#157a58");
-      cubicle(210,166,"MARKETING","#2a6ba8");
-      ["coo","rnd","engineer","marketing"].forEach(k=>guy(k,homes[k][0],homes[k][1]));
-      ["rnd","engineer","marketing"].forEach(tool);
+      for(let y=0;y<240;y+=16){ px(stage,0,y,330,16,(y/16)%2?"#d4bf99":"#dac6a4"); px(stage,0,y+15,330,1,"#c7b38c"); }
+      for(let y=0;y<240;y+=16){ const off=((y/16)%2)?40:0; for(let x=off;x<330;x+=80) px(stage,x,y,1,15,"#c7b38c"); }
+      px(stage,8,8,110,150,"#0000000f");
+      px(stage,8,8,110,5,"#4a5a7a");px(stage,8,8,5,150,"#4a5a7a");px(stage,8,153,110,5,"#4a5a7a");
+      px(stage,113,8,5,55,"#4a5a7a");px(stage,113,103,5,55,"#4a5a7a");
+      stxt(stage,52,21,5,"COO","#4a5a7a");
+      px(stage,35,55,46,18,"#8a6a44");px(stage,35,73,46,5,"#6b4f30");
+      px(stage,47,40,22,14,"#2f3540");px(stage,50,43,16,8,"#7fd4ff");
+      cubicle(238,12,"R&D","#b8552a");
+      cubicle(238,90,"ENG","#157a58");
+      cubicle(238,168,"MKT","#2a6ba8");
+      ["rnd","engineer","marketing"].forEach(deskItems);
+      guy("coo",homes.coo[0],homes.coo[1]);
+      ["rnd","engineer","marketing"].forEach(id=>{ const s=deskSpot[id]; guy(id,s[0]+14,s[1]); });
     }
     function cubicle(x,y,label,color){
-      px(stage,x,y,90,66,"#0000000c");
-      px(stage,x,y,90,4,"#9c8a6c");px(stage,x,y,4,66,"#9c8a6c");px(stage,x+86,y,4,66,"#9c8a6c");
-      stxt(stage,x+45,y+14,8,label,color);
-      px(stage,x+30,y+34,30,14,"#8a6a44");px(stage,x+30,y+48,30,4,"#6b4f30");
-      px(stage,x+38,y+22,14,10,"#2f3540");px(stage,x+40,y+24,10,6,"#7fd4ff");
+      px(stage,x,y,86,4,"#9c8a6c"); px(stage,x+82,y,4,66,"#9c8a6c"); px(stage,x,y+62,86,4,"#9c8a6c");
+      px(stage,x,y,4,24,"#9c8a6c"); px(stage,x,y+42,4,24,"#9c8a6c");
+      stxt(stage,x+48,y+15,5,label,color);
+      px(stage,x+38,y+30,34,16,"#8a6a44"); px(stage,x+38,y+46,34,4,"#6b4f30");
+    }
+    function deskItems(id){
+      const [dx,dy]=deskSpot[id];
+      const g=document.createElementNS(NS,"g"); g.setAttribute("id","deskitem-"+id);
+      if(id==="rnd"){ px(g,dx-12,dy-14,18,11,"#2f3540"); px(g,dx-10,dy-12,14,7,"#7fd4ff");
+        const kb=document.createElementNS(NS,"g"); kb.setAttribute("id","kb-rnd");
+        px(kb,dx-12,dy-1,18,5,"#555"); for(let i=0;i<5;i++)px(kb,dx-10+i*4,dy,2,2,"#ccc"); g.appendChild(kb); }
+      if(id==="engineer"){ const bp=document.createElementNS(NS,"g"); bp.setAttribute("id","bp-eng");
+        px(bp,dx-13,dy-6,26,16,"#2a5db0"); px(bp,dx-10,dy-3,20,1,"#9fc4ff"); px(bp,dx-10,dy,12,1,"#9fc4ff");
+        px(bp,dx-10,dy+3,16,1,"#9fc4ff"); px(bp,dx-10,dy+6,8,1,"#9fc4ff"); g.appendChild(bp); }
+      if(id==="marketing"){ const po=document.createElementNS(NS,"g"); po.setAttribute("id","po-mkt");
+        px(po,dx-11,dy-8,22,18,"#fff"); g.appendChild(po); }
+      stage.appendChild(g);
     }
     function guy(id,x,y){
-      const g=document.createElementNS(NS,"g");
-      g.setAttribute("id","guy-"+id);g.style.transition="transform 0.85s steps(7)";
-      g.setAttribute("transform","translate("+x+","+y+")");
-      px(g,-5,-22,10,7,"#6b4a2a");
-      px(g,-5,-16,10,5,"#e8c39a");
-      px(g,-3,-15,2,2,"#222");px(g,1,-15,2,2,"#222");
-      px(g,-6,-11,12,11,shirts[id]);
-      px(g,-6,-11,3,11,"#00000022");
-      px(g,-8,-10,2,8,shirts[id]);px(g,6,-10,2,8,shirts[id]);
-      px(g,-5,0,4,5,"#33405a");px(g,1,0,4,5,"#33405a");
-      const b=document.createElementNS(NS,"g");
-      b.setAttribute("id","bub-"+id);b.style.opacity="0";b.style.transition="opacity .2s";
-      px(b,-9,-40,18,13,"#fff");px(b,-3,-27,4,3,"#fff");
-      const tt=document.createElementNS(NS,"text");tt.setAttribute("id","bt-"+id);
-      tt.setAttribute("x",0);tt.setAttribute("y",-30);tt.setAttribute("text-anchor","middle");
-      tt.setAttribute("font-size","10");b.appendChild(tt);
-      g.appendChild(b);stage.appendChild(g);
+      const g=document.createElementNS(NS,"g"); g.setAttribute("id","guy-"+id);
+      g.setAttribute("transform","translate("+x+" "+y+")");
+      const body=document.createElementNS(NS,"g"); body.setAttribute("id","body-"+id);
+      px(body,-5,-22,10,7,"#6b4a2a"); px(body,-5,-16,10,5,"#e8c39a");
+      px(body,-3,-15,2,2,"#222");px(body,1,-15,2,2,"#222");
+      px(body,-6,-11,12,11,shirts[id]); px(body,-6,-11,3,11,"#00000022");
+      px(body,-8,-10,2,8,shirts[id]);
+      const arm=px(body,6,-10,2,8,shirts[id]); arm.setAttribute("id","arm-"+id);
+      px(body,-5,0,4,5,"#33405a");px(body,1,0,4,5,"#33405a");
+      const ph=document.createElementNS(NS,"g"); ph.setAttribute("id","phone-"+id); ph.style.opacity="0";
+      px(ph,7,-18,4,7,"#222"); px(ph,8,-17,2,4,"#7fd4ff"); body.appendChild(ph);
+      g.appendChild(body); stage.appendChild(g);
     }
-    function tool(id){
-      const g=document.createElementNS(NS,"g");
-      g.setAttribute("id","tool-"+id);g.style.opacity="0";g.style.transition="opacity .2s";
-      if(id==="rnd"){ px(g,-9,4,18,5,"#444"); for(let i=0;i<5;i++)px(g,-8+i*4,5,3,3,"#ddd"); }
-      if(id==="engineer"){ px(g,-9,-2,18,12,"#2a5db0"); px(g,-6,1,12,1,"#9fc4ff");
-        px(g,-6,4,8,1,"#9fc4ff"); px(g,-6,7,10,1,"#9fc4ff"); }
-      if(id==="marketing"){ px(g,-7,-6,14,14,"#fff"); px(g,-5,-4,10,3,"#e06a2c"); px(g,-5,1,7,2,"#888"); }
-      stage.appendChild(g);
-      g.setAttribute("transform","translate("+homes[id][0]+","+homes[id][1]+")");
+    function pos(id){ const t=document.getElementById("guy-"+id).getAttribute("transform").match(/-?[\d.]+/g); return [parseFloat(t[0]),parseFloat(t[1])]; }
+    function phone(id,on){ document.getElementById("phone-"+id).style.opacity=on?"1":"0";
+      document.getElementById("arm-"+id).setAttribute("y",on?"-18":"-10"); }
+    let posterTimer=null;
+    function fillPoster(){ const [dx,dy]=deskSpot.marketing; let n=0; const colors=["#e06a2c","#2a6ba8","#157a58"];
+      posterTimer=setInterval(()=>{ if(n>8){clearInterval(posterTimer);return;}
+        px(document.getElementById("po-mkt"),dx-9+(n%3)*6,dy-6+Math.floor(n/3)*5,5,4,colors[n%3]); n++; },300); }
+    function clearPoster(){ if(posterTimer)clearInterval(posterTimer);
+      const po=document.getElementById("po-mkt"); if(po){ while(po.children.length>1)po.removeChild(po.lastChild); } }
+    function workLoop(id,on){
+      const body=document.getElementById("body-"+id);
+      if(on){
+        if(id==="rnd") body.style.animation="typearm .28s ease-in-out infinite";
+        if(id==="engineer") body.style.animation="lean .9s ease-in-out infinite";
+        if(id==="marketing"){ body.style.animation="paint .5s ease-in-out infinite"; clearPoster(); fillPoster(); }
+      } else { body.style.animation=""; }
     }
-    function move(id,x,y){ const e=document.getElementById("guy-"+id); if(e) e.setAttribute("transform","translate("+x+","+y+")"); }
-    function bub(id,t,show){ const e=document.getElementById("bub-"+id); if(!e) return;
-      e.style.opacity=show?"1":"0"; if(t!==undefined){ const x=document.getElementById("bt-"+id); if(x) x.textContent=t; } }
-    function showTool(id,on){ const e=document.getElementById("tool-"+id); if(e) e.style.opacity=on?"1":"0"; }
-    function loop(id,on){ const g=document.getElementById("guy-"+id); if(!g) return;
-      g.style.animation = on ? (id==="engineer" ? "lean .8s steps(2) infinite" : "type .25s steps(2) infinite") : ""; }
+    function walk(id,x,y){
+      return new Promise(res=>{
+        const [cx,cy]=pos(id); const dist=Math.abs(x-cx)+Math.abs(y-cy);
+        const dur=Math.max(350,dist*15);
+        const g=document.getElementById("guy-"+id); const body=document.getElementById("body-"+id);
+        const start=performance.now(); body.style.animation="step .26s ease-in-out infinite";
+        function frame(now){ const p=Math.min(1,(now-start)/dur);
+          g.setAttribute("transform","translate("+(cx+(x-cx)*p)+" "+(cy+(y-cy)*p)+")");
+          if(p<1) requestAnimationFrame(frame); else { body.style.animation=""; res(); } }
+        requestAnimationFrame(frame);
+      });
+    }
     function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
     buildOffice();
 
-    // COO walks to a worker and hands off the task (start of work).
+    // COO walks from wherever it is to the worker. No text bubbles.
     async function animSend(who){
-      bub("coo","\uD83D\uDCC4",true);
-      move("coo", standby[who][0]-14, standby[who][1]);
-      await wait(900);
-      bub("coo",undefined,false);
-      bub(who,"\u2757",true); await wait(400); bub(who,undefined,false);
-      showTool(who,true); loop(who,true);
+      await walk("coo",HALL_X,pos("coo")[1]);
+      await walk("coo",HALL_X,deskSpot[who][1]);
+      await walk("coo",deskSpot[who][0]-22,deskSpot[who][1]);
+      workLoop(who,true);
     }
-    // Worker finishes; COO listens, then both reset (end of work).
+    // Worker finishes; COO raises phone to call owner, then stays on the floor.
     async function animReturn(who){
-      loop(who,false); showTool(who,false);
-      bub("coo","\u2026",true); bub(who,"\uD83D\uDCAC",true);
-      await wait(1100);
-      bub(who,undefined,false); bub("coo",undefined,false);
-      move("coo", homes.coo[0], homes.coo[1]);
-      await wait(800);
-      bub("coo","\u2705",true); await wait(900); bub("coo",undefined,false);
+      workLoop(who,false);
+      phone("coo",true);
+      await wait(1600);
+      phone("coo",false);
     }
-    function cooThinking(on){ if(on){ bub("coo","\uD83D\uDCAD",true); } else { bub("coo",undefined,false); } }
+    // When the whole turn is idle again, send COO home (called after delegation ends).
+    async function cooGoHome(){
+      const [cx,cy]=pos("coo");
+      if(Math.abs(cx-homes.coo[0])<6 && Math.abs(cy-homes.coo[1])<6) return;
+      await walk("coo",HALL_X,cy);
+      await walk("coo",HALL_X,homes.coo[1]);
+      await walk("coo",homes.coo[0],homes.coo[1]);
+    }
+    function cooThinking(on){ /* no bubble; COO just waits at desk */ }
 
     function add(text, who) {
       const d = document.createElement("div");
@@ -324,13 +350,14 @@
         const data = await res.json();
         await animReturn(delegation.to);
         ph.remove();
-        if (data.error) { add(data.error, "coo"); }
+        if (data.error) { add(data.error, "coo"); await cooGoHome(); }
         else {
           add(data.workerReply, delegation.to);
           add(data.cooReply, "coo");
           if (data.delegation) showApproval(data.delegation);
+          else await cooGoHome();
         }
-      } catch (e) { await animReturn(delegation.to); ph.remove(); add("Something went wrong running that step.", "coo"); }
+      } catch (e) { await animReturn(delegation.to); ph.remove(); add("Something went wrong running that step.", "coo"); await cooGoHome(); }
       send.disabled = false;
     }
 
