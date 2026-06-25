@@ -57,6 +57,10 @@ const MEMORY_TURNS_TO_INCLUDE = 20;
 const app = express();
 app.use(express.json());
 
+// Serve the office page (public/index.html) and any other files in /public.
+// This is what lets your Squarespace loader pull the latest interface.
+app.use(express.static("public"));
+
 // CORS = which websites are allowed to talk to this server. Once your
 // Squarespace site is ready, you can tighten this to just your domain. For now
 // it accepts your page so testing is easy.
@@ -88,8 +92,8 @@ function saveMemory(mem) {
 
 // --- Routes ---------------------------------------------------------------
 
-// A simple health check so you can confirm the server is alive in a browser.
-app.get("/", (req, res) => {
+// A simple health check so you can confirm the server is alive.
+app.get("/health", (req, res) => {
   res.send("AI company server is running. The COO is ready.");
 });
 
