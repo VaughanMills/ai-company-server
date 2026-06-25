@@ -35,15 +35,15 @@ import Anthropic from "@anthropic-ai/sdk";
 const PROVIDER = {
   coo: "claude",
   rnd: "grok",
-  engineer: "claude",
-  marketing: "claude",
+  engineer: "grok",
+  marketing: "grok",
 };
 
 const MODELS = {
   coo: "claude-sonnet-4-6",
   rnd: "grok-4.3",
-  engineer: "claude-sonnet-4-6",
-  marketing: "claude-sonnet-4-6",
+  engineer: "grok-4.3",
+  marketing: "grok-4.3",
 };
 
 const WEB_SEARCH = {
