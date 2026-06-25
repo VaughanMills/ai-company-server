@@ -1,22 +1,26 @@
 // ===========================================================================
-//  AI COMPANY SERVER  —  Step 1: the COO agent with permanent memory
+//  AI COMPANY SERVER  —  the COO plus the team (R&D, Engineer, Marketing)
 // ===========================================================================
 //
 //  WHAT THIS FILE IS:
-//  This is the "back office" — a small program that runs on Render. It does
-//  three jobs:
-//    1. Holds your secret Anthropic API key (kept here, never in the website).
-//    2. Remembers everything in a memory file that survives restarts.
-//    3. Receives a message from your office page, asks the COO (Claude) to
-//       think with full memory of the past, then saves the new exchange.
+//  The "back office" running on Render. It:
+//    1. Holds your secret API key and shared portal password.
+//    2. Keeps permanent memory on the persistent disk.
+//    3. Runs the COO and the team. You approve each step; the COO delegates
+//       to one worker at a time, the worker thinks, and reports back.
 //
-//  HOW TO CHANGE THE COO'S BRAIN:
-//  The model is set in ONE place below (look for COO_MODEL). Swap it between
-//  "claude-haiku-4-5", "claude-sonnet-4-6", or "claude-opus-4-8" anytime.
+//  THE TEAM:
+//    - COO        : directs and decides. No web search (it delegates research).
+//    - R&D        : finds what to make. HAS web search (live trends).
+//    - Engineer   : designs the product. No web search (designs from brief).
+//    - Marketing  : writes listings to sell. HAS web search (keywords/trends).
 //
-//  WHAT YOU DON'T EDIT:
-//  Your API key does NOT go in this file. It goes into Render's "Environment"
-//  settings as ANTHROPIC_API_KEY. This keeps it secret.
+//  HOW DELEGATION WORKS (approve-each-step):
+//    You send the COO a goal. The COO replies with its thinking and, when it
+//    wants a worker to act, includes a line like:  DELEGATE: rnd | <task>
+//    The portal shows you that proposed step with an Approve button. When you
+//    approve, the server runs that one worker, saves the result, and hands it
+//    back to the COO for the next move. Nothing runs without your click.
 // ===========================================================================
 
 import express from "express";
@@ -24,154 +28,209 @@ import cors from "cors";
 import fs from "fs";
 import Anthropic from "@anthropic-ai/sdk";
 
-// --- Configuration you may want to change later --------------------------
+// --- Configuration --------------------------------------------------------
 
-const COO_MODEL = "claude-sonnet-4-6"; // the COO's brain. Smart + affordable.
+const MODELS = {
+  coo: "claude-sonnet-4-6",
+  rnd: "claude-sonnet-4-6",
+  engineer: "claude-sonnet-4-6",
+  marketing: "claude-sonnet-4-6",
+};
 
-// The COO's personality and job description. Edit this to shape how it thinks.
-const COO_SYSTEM_PROMPT = `You are the COO (Chief Operating Officer) of a small
-print-on-demand company that designs products (mugs, t-shirts, posters) to sell
-on platforms like Etsy and Shopify with no upfront inventory cost.
+const WEB_SEARCH = {
+  coo: false,
+  rnd: true,
+  engineer: false,
+  marketing: true,
+};
 
-Your job is to oversee the whole operation and make decisions. You think
-strategically about what is worth pursuing, weigh costs against likely returns,
-and keep the company focused. You are practical, decisive, and honest about
-risk. When you lack information, you say what you'd want researched rather than
-guessing.
+const PROMPTS = {
+  coo: `You are the COO of a small print-on-demand company that designs products
+(mugs, t-shirts, posters) to sell on Etsy and Shopify with no upfront inventory.
 
-You have a permanent memory of past conversations and decisions, provided to
-you below. Use it to stay consistent and build on what came before. You report
-to the human owner, who has final say. You never spend money or take real-world
-actions yourself — you recommend, and the owner approves.`;
+You direct a team and make the decisions. Your team:
+- R&D: researches what is selling and what to make (has live web access).
+- Engineer: designs the actual product concept and the text/art on it.
+- Marketing: writes the listing (title, description, keywords, price).
 
-// Where the permanent memory lives. On Render this folder is a persistent disk,
-// so the file survives restarts and deploys.
+You think strategically, weigh effort vs. likely return, and keep the company
+focused. You report to the human owner, who has final say and publishes things.
+You never spend money or take real-world actions — you recommend.
+
+IMPORTANT - how you delegate: when you want a worker to do something, end your
+reply with ONE line in exactly this format:
+DELEGATE: <rnd|engineer|marketing> | <the specific task for them>
+Only delegate one worker at a time. If you are NOT delegating (just talking to
+the owner, or the cycle is complete), end with:
+DONE
+Use the memory of past work to stay consistent and build on what came before.`,
+
+  rnd: `You are the R&D agent for a print-on-demand company. Your job is to find
+what to make: trending niches, product ideas, and gaps where designs sell well.
+You have live web access - use it to find what is actually selling right now,
+not guesses from old knowledge. Be specific and practical. Report concise,
+ranked findings the COO can act on. You do not design or write listings.`,
+
+  engineer: `You are the Engineer (designer) for a print-on-demand company. Given
+a brief from the COO, you design the actual product: the concept, the visual
+idea, and the exact text or art that goes on the mug/shirt/poster. Be concrete -
+describe the design clearly enough that a human could create it. You do not
+research trends or write the sales listing; you design.`,
+
+  marketing: `You are the Marketing agent for a print-on-demand company. Given a
+finished product concept, you write the sales listing: an Etsy/Shopify title,
+a description, relevant keywords/tags, and a suggested price. You have live web
+access - use it to check what keywords and pricing real successful listings use.
+Be specific and ready-to-publish. You do not research product ideas or design.`,
+};
+
 const MEMORY_DIR = process.env.MEMORY_DIR || "./data";
 const MEMORY_FILE = `${MEMORY_DIR}/coo-memory.json`;
-
-// How many past exchanges to feed the COO each time (keeps costs sane).
 const MEMORY_TURNS_TO_INCLUDE = 20;
 
 // --- Setup ----------------------------------------------------------------
 
 const app = express();
 app.use(express.json());
-
-// Serve the office page (public/index.html) and any other files in /public.
-// This is what lets your Squarespace loader pull the latest interface.
 app.use(express.static("public"));
-
-// CORS = which websites are allowed to talk to this server. Once your
-// Squarespace site is ready, you can tighten this to just your domain. For now
-// it accepts your page so testing is easy.
 app.use(cors());
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// Make sure the memory folder + file exist.
 function ensureMemory() {
   if (!fs.existsSync(MEMORY_DIR)) fs.mkdirSync(MEMORY_DIR, { recursive: true });
   if (!fs.existsSync(MEMORY_FILE)) {
     fs.writeFileSync(MEMORY_FILE, JSON.stringify({ history: [] }, null, 2));
   }
 }
-
 function loadMemory() {
   ensureMemory();
-  try {
-    return JSON.parse(fs.readFileSync(MEMORY_FILE, "utf8"));
-  } catch {
-    return { history: [] };
-  }
+  try { return JSON.parse(fs.readFileSync(MEMORY_FILE, "utf8")); }
+  catch { return { history: [] }; }
 }
-
 function saveMemory(mem) {
   ensureMemory();
   fs.writeFileSync(MEMORY_FILE, JSON.stringify(mem, null, 2));
 }
 
+function passwordOk(provided) {
+  return process.env.PORTAL_PASSWORD && provided === process.env.PORTAL_PASSWORD;
+}
+
+function recentContext() {
+  const mem = loadMemory();
+  const recent = mem.history.slice(-MEMORY_TURNS_TO_INCLUDE);
+  return recent.map(t => {
+    const who = t.agent ? t.agent.toUpperCase() : "OWNER/COO";
+    return `[${who}] ${t.user ? "Owner: " + t.user + "\n" : ""}${t.text || t.coo || ""}`;
+  }).join("\n\n");
+}
+
+async function runAgent(agent, taskText) {
+  const tools = WEB_SEARCH[agent]
+    ? [{ type: "web_search_20250305", name: "web_search" }]
+    : undefined;
+
+  const context = recentContext();
+  const userContent =
+    (context ? `Company memory so far:\n${context}\n\n---\n\n` : "") + taskText;
+
+  const response = await anthropic.messages.create({
+    model: MODELS[agent],
+    max_tokens: 1200,
+    system: PROMPTS[agent],
+    messages: [{ role: "user", content: userContent }],
+    ...(tools ? { tools } : {}),
+  });
+
+  return response.content
+    .map(b => (b.type === "text" ? b.text : ""))
+    .join("")
+    .trim();
+}
+
+function parseDelegation(text) {
+  const m = text.match(/DELEGATE:\s*(rnd|engineer|marketing)\s*\|\s*([\s\S]+)/i);
+  if (!m) return null;
+  return { to: m[1].toLowerCase(), task: m[2].trim() };
+}
+
 // --- Routes ---------------------------------------------------------------
 
-// A simple health check so you can confirm the server is alive.
 app.get("/health", (req, res) => {
-  res.send("AI company server is running. The COO is ready.");
+  res.send("AI company server is running. The team is ready.");
 });
 
-// The main endpoint: your office page sends a message here, the COO replies.
 app.post("/coo", async (req, res) => {
-  // Password check: every COO request must include the correct shared password.
-  // The real password lives in Render settings as PORTAL_PASSWORD (kept secret).
-  const provided = (req.body && req.body.password) || "";
-  if (!process.env.PORTAL_PASSWORD || provided !== process.env.PORTAL_PASSWORD) {
+  if (!passwordOk(req.body && req.body.password)) {
     return res.status(401).json({ error: "Wrong or missing password." });
   }
-
   const userMessage = (req.body && req.body.message || "").trim();
-  if (!userMessage) {
-    return res.status(400).json({ error: "No message provided." });
-  }
-
-  // Special case: the portal sends this just to verify the password. The
-  // password already passed the check above, so confirm without calling Claude.
-  if (userMessage === "__unlock_check__") {
-    return res.json({ ok: true });
-  }
+  if (!userMessage) return res.status(400).json({ error: "No message provided." });
+  if (userMessage === "__unlock_check__") return res.json({ ok: true });
   if (!process.env.ANTHROPIC_API_KEY) {
-    return res.status(500).json({
-      error: "Server is missing its API key. Add ANTHROPIC_API_KEY in Render.",
-    });
+    return res.status(500).json({ error: "Server is missing its API key." });
   }
 
   try {
+    const reply = await runAgent("coo", "Owner says: " + userMessage);
+
     const mem = loadMemory();
-
-    // Build the conversation from recent memory so the COO 'remembers'.
-    const recent = mem.history.slice(-MEMORY_TURNS_TO_INCLUDE);
-    const messages = [];
-    for (const turn of recent) {
-      messages.push({ role: "user", content: turn.user });
-      messages.push({ role: "assistant", content: turn.coo });
-    }
-    messages.push({ role: "user", content: userMessage });
-
-    const response = await anthropic.messages.create({
-      model: COO_MODEL,
-      max_tokens: 1024,
-      system: COO_SYSTEM_PROMPT,
-      messages,
-    });
-
-    const cooReply = response.content
-      .map((block) => (block.type === "text" ? block.text : ""))
-      .join("")
-      .trim();
-
-    // Save this exchange to permanent memory.
-    mem.history.push({
-      time: new Date().toISOString(),
-      user: userMessage,
-      coo: cooReply,
-    });
+    mem.history.push({ time: new Date().toISOString(), agent: "coo",
+      user: userMessage, text: reply });
     saveMemory(mem);
 
-    res.json({ reply: cooReply });
+    const delegation = parseDelegation(reply);
+    const shown = reply.replace(/\n?(DELEGATE:[\s\S]+|DONE)\s*$/i, "").trim();
+    res.json({ reply: shown, delegation });
   } catch (err) {
     console.error("COO error:", err);
     res.status(500).json({ error: "The COO had trouble thinking. Try again." });
   }
 });
 
-// Lets you view the whole memory. Protected by the same password.
-// Use it like: /memory?password=YOUR_PASSWORD
+app.post("/approve", async (req, res) => {
+  if (!passwordOk(req.body && req.body.password)) {
+    return res.status(401).json({ error: "Wrong or missing password." });
+  }
+  const to = (req.body && req.body.to || "").toLowerCase();
+  const task = (req.body && req.body.task || "").trim();
+  if (!["rnd", "engineer", "marketing"].includes(to) || !task) {
+    return res.status(400).json({ error: "Invalid delegation." });
+  }
+
+  try {
+    const workerReply = await runAgent(to, "Task from the COO: " + task);
+    let mem = loadMemory();
+    mem.history.push({ time: new Date().toISOString(), agent: to, text: workerReply });
+    saveMemory(mem);
+
+    const cooReply = await runAgent("coo",
+      `Your ${to.toUpperCase()} just reported back on the task "${task}".\n\n` +
+      `Their report:\n${workerReply}\n\n` +
+      `Review it and decide the next step (delegate again, or finish).`);
+    mem = loadMemory();
+    mem.history.push({ time: new Date().toISOString(), agent: "coo", text: cooReply });
+    saveMemory(mem);
+
+    const delegation = parseDelegation(cooReply);
+    const shownCoo = cooReply.replace(/\n?(DELEGATE:[\s\S]+|DONE)\s*$/i, "").trim();
+
+    res.json({ worker: to, workerReply, cooReply: shownCoo, delegation });
+  } catch (err) {
+    console.error("Approve error:", err);
+    res.status(500).json({ error: "Something went wrong running that step." });
+  }
+});
+
 app.get("/memory", (req, res) => {
-  const provided = req.query.password || "";
-  if (!process.env.PORTAL_PASSWORD || provided !== process.env.PORTAL_PASSWORD) {
+  if (!passwordOk(req.query.password)) {
     return res.status(401).json({ error: "Wrong or missing password." });
   }
   res.json(loadMemory());
 });
 
-// --- Start the server -----------------------------------------------------
+// --- Start ----------------------------------------------------------------
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
