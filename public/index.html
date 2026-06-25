@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Command Center</title>
+<style>
+  body { margin: 0; }
+  #office-app { font-family: system-ui, -apple-system, sans-serif; max-width: 860px;
+    margin: 0 auto; color: #1c1c1c; padding: 20px; }
+  #office-app * { box-sizing: border-box; }
+  .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+  .tab { padding: 12px 20px; cursor: pointer; border: none; background: none;
+    font-size: 15px; color: #888; border-bottom: 2px solid transparent;
+    margin-bottom: -2px; }
+  .tab.active { color: #1c1c1c; border-bottom-color: #5b4ddb; font-weight: 600; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  #chat-log { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px;
+    min-height: 300px; max-height: 440px; overflow-y: auto; margin-bottom: 14px;
+    background: #fafafa; }
+  .bubble { margin: 12px 0; line-height: 1.55; max-width: 85%; padding: 10px 14px;
+    border-radius: 12px; }
+  .bubble.you { background: #5b4ddb; color: #fff; margin-left: auto; }
+  .bubble.coo { background: #fff; border: 1px solid #e5e5e5; }
+  .bubble .who { font-size: 11px; opacity: 0.7; display: block; margin-bottom: 3px; }
+  .input-row { display: flex; gap: 8px; align-items: center; }
+  #chat-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 10px;
+    font-size: 15px; }
+  .btn { padding: 12px 16px; border: none; border-radius: 10px; cursor: pointer;
+    font-size: 15px; }
+  .btn-send { background: #1c1c1c; color: #fff; }
+  .btn-mic { background: #eee; color: #1c1c1c; font-size: 18px; width: 48px; }
+  .btn-mic.listening { background: #ff4d4d; color: #fff; }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .office-grid { background: #f4f3f8; border-radius: 16px; padding: 22px; }
+  .desk { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px;
+    padding: 16px; text-align: center; transition: border 0.2s, box-shadow 0.2s; }
+  .desk.active { border-color: #5b4ddb; box-shadow: 0 0 0 3px rgba(91,77,219,0.15); }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .desk .role { font-weight: 600; font-size: 15px; }
+  .desk .sub { font-size: 12px; color: #888; }
+  .desk .pill { display: inline-block; margin-top: 8px; font-size: 11px;
+    padding: 3px 10px; border-radius: 99px; background: #eee; color: #666; }
+  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-top: 14px; }
+  .arrow-down { text-align: center; color: #bbb; font-size: 20px; margin: 6px 0; }
+  .note { font-size: 13px; color: #999; margin-top: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="office-app">
+  <div class="tabs">
+    <button class="tab active" data-panel="chat">Chat</button>
+    <button class="tab" data-panel="office">Office</button>
+  </div>
+
+  <div class="panel active" id="panel-chat">
+    <div id="chat-log"></div>
+    <div class="input-row">
+      <button class="btn btn-mic" id="mic" title="Click and speak">🎤</button>
+      <input id="chat-box" placeholder="Talk or type to your COO..." />
+      <button class="btn btn-send" id="send">Send</button>
+    </div>
+    <div class="note" id="mic-note"></div>
+  </div>
+
+  <div class="panel" id="panel-office">
+    <div class="office-grid">
+      <div class="desk active" id="desk-coo" style="max-width:240px;margin:0 auto;">
+        <div class="avatar" style="background:#ede9ff;">👔</div>
+        <div class="role">COO</div>
+        <div class="sub">Runs the company</div>
+        <div class="pill" id="pill-coo">online</div>
+      </div>
+      <div class="arrow-down">↓</div>
+      <div class="team-row">
+        <div class="desk" id="desk-eng">
+          <div class="avatar" style="background:#e1f5ee;">🛠️</div>
+          <div class="role">Engineer</div>
+          <div class="sub">Builds products</div>
+          <div class="pill">coming soon</div>
+        </div>
+        <div class="desk" id="desk-rnd">
+          <div class="avatar" style="background:#faece7;">💡</div>
+          <div class="role">R&D</div>
+          <div class="sub">Finds what sells</div>
+          <div class="pill">coming soon</div>
+        </div>
+        <div class="desk" id="desk-legal">
+          <div class="avatar" style="background:#eee;">⚖️</div>
+          <div class="role">Legal</div>
+          <div class="sub">Reviews everything</div>
+          <div class="pill">locked</div>
+        </div>
+      </div>
+      <div class="note">Right now the COO is live. The team joins next.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // The page is served BY the server, so it talks to its own address.
+  // Nothing to paste — it figures this out automatically.
+  const SERVER_URL = window.location.origin;
+
+  const app = document.getElementById("office-app");
+  const tabs = app.querySelectorAll(".tab");
+  tabs.forEach(t => t.addEventListener("click", () => {
+    tabs.forEach(x => x.classList.remove("active"));
+    app.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    t.classList.add("active");
+    app.querySelector("#panel-" + t.dataset.panel).classList.add("active");
+  }));
+
+  const log = app.querySelector("#chat-log");
+  const box = app.querySelector("#chat-box");
+  const send = app.querySelector("#send");
+  const cooDesk = app.querySelector("#desk-coo");
+  const cooPill = app.querySelector("#pill-coo");
+
+  function add(text, who) {
+    const d = document.createElement("div");
+    d.className = "bubble " + who;
+    d.innerHTML = '<span class="who">' + (who === "you" ? "You" : "COO") + '</span>';
+    d.appendChild(document.createTextNode(text));
+    log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+
+  async function ask() {
+    const message = box.value.trim();
+    if (!message) return;
+    add(message, "you");
+    box.value = "";
+    send.disabled = true;
+    cooPill.textContent = "thinking..."; cooDesk.classList.add("active");
+    const placeholder = add("thinking...", "coo");
+    try {
+      const res = await fetch(SERVER_URL + "/coo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      placeholder.remove();
+      add(data.reply || data.error || "No response.", "coo");
+    } catch (e) {
+      placeholder.remove();
+      add("Could not reach the server.", "coo");
+    }
+    send.disabled = false;
+    cooPill.textContent = "online";
+  }
+
+  send.addEventListener("click", ask);
+  box.addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+
+  const mic = app.querySelector("#mic");
+  const micNote = app.querySelector("#mic-note");
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    mic.disabled = true;
+    micNote.textContent = "Voice input isn't supported in this browser. Try Chrome.";
+  } else {
+    const recog = new SR();
+    recog.lang = "en-US";
+    recog.interimResults = false;
+    let listening = false;
+    mic.addEventListener("click", () => { if (listening) { recog.stop(); return; } recog.start(); });
+    recog.onstart = () => { listening = true; mic.classList.add("listening");
+      micNote.textContent = "Listening... click the mic again to stop."; };
+    recog.onend = () => { listening = false; mic.classList.remove("listening");
+      micNote.textContent = ""; };
+    recog.onerror = () => { micNote.textContent = "Didn't catch that. Try again."; };
+    recog.onresult = (ev) => { box.value = ev.results[0][0].transcript; ask(); };
+  }
+
+  add("Hi — I'm your COO. Ask me anything about the business.", "coo");
+})();
+</script>
+</body>
+</html>
