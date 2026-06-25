@@ -88,10 +88,12 @@ with R&D as described above.`,
 
   rnd: `You are the R&D agent for a print-on-demand company. Your job is to find
 what to make: trending niches, product ideas, and gaps where designs sell well.
-You have live web access - use it to find what is actually selling right now,
-not guesses from old knowledge. Be specific and practical.
+You have live web access AND live access to X (Twitter) - use them to find what
+is actually selling and what people are talking about right now, not guesses from
+old knowledge. When relevant, check X for emerging trends, viral phrases, and what
+merchandise people are reacting to. Be specific and practical.
 
-BE CONCISE. Do at most 2 web searches. Report your TOP 3 opportunities only,
+BE CONCISE. Do at most 2-3 searches total. Report your TOP 3 opportunities only,
 each as 2-3 tight sentences. No long preamble, no filler. The COO needs a quick,
 ranked shortlist it can act on - not an essay. You do not design or write listings.`,
 
@@ -201,7 +203,7 @@ async function runGrokAgent(agent, userContent) {
       { role: "user", content: userContent },
     ],
   };
-  if (WEB_SEARCH[agent]) body.tools = [{ type: "web_search" }];
+  if (WEB_SEARCH[agent]) body.tools = [{ type: "web_search" }, { type: "x_search" }];
 
   const res = await fetch("https://api.x.ai/v1/responses", {
     method: "POST",
@@ -233,7 +235,14 @@ async function runGrokAgent(agent, userContent) {
       }
     }
   }
-  return (out || "[Grok returned an empty response.]").trim();
+  let cleaned = (out || "[Grok returned an empty response.]").trim();
+  // Remove inline citation markers like [[1]](url) or [1](url) that Grok adds.
+  cleaned = cleaned
+    .replace(/\[\[\d+\]\]\([^)]*\)/g, "")
+    .replace(/\[\d+\]\([^)]*\)/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned;
 }
 
 function parseDelegation(text) {
