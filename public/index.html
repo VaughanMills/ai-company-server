@@ -6,17 +6,19 @@
 <title>Command Center</title>
 <style>
   body { margin: 0; }
-  #office-app { font-family: system-ui, -apple-system, sans-serif; max-width: 860px;
-    margin: 0 auto; color: #1c1c1c; padding: 20px; }
+  #office-app { font-family: system-ui, -apple-system, sans-serif; max-width: 920px;
+    margin: 0 auto; color: #1c1c1c; padding: 16px; }
   #office-app * { box-sizing: border-box; }
-  .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-bottom: 16px; }
   .tab { padding: 12px 20px; cursor: pointer; border: none; background: none;
     font-size: 15px; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; }
   .tab.active { color: #1c1c1c; border-bottom-color: #5b4ddb; font-weight: 600; }
   .panel { display: none; }
   .panel.active { display: block; }
   #chat-log { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px;
-    min-height: 320px; max-height: 480px; overflow-y: auto; margin-bottom: 14px; background: #fafafa; }
+    height: 68vh; min-height: 420px; overflow-y: auto; margin-bottom: 14px; background: #fafafa; }
+  #history-log { border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px;
+    height: 70vh; min-height: 420px; overflow-y: auto; background: #fafafa; }
   .bubble { margin: 12px 0; line-height: 1.55; max-width: 90%; padding: 10px 14px;
     border-radius: 12px; white-space: pre-wrap; }
   .bubble.you { background: #5b4ddb; color: #fff; margin-left: auto; }
@@ -33,26 +35,49 @@
     padding: 8px 16px; cursor: pointer; font-size: 14px; }
   .skip-btn { background: none; border: 1px solid #ccc; border-radius: 8px;
     padding: 8px 16px; cursor: pointer; font-size: 14px; margin-left: 8px; }
-  .input-row { display: flex; gap: 8px; align-items: center; }
-  #chat-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 10px; font-size: 15px; }
+  .input-row { display: flex; gap: 8px; align-items: flex-end; }
+  #chat-box { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 10px;
+    font-size: 15px; resize: vertical; min-height: 52px; font-family: inherit; }
   .btn { padding: 12px 16px; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; }
   .btn-send { background: #1c1c1c; color: #fff; }
-  .btn-mic { background: #eee; color: #1c1c1c; font-size: 18px; width: 48px; }
+  .btn-mic { background: #eee; color: #1c1c1c; font-size: 18px; width: 48px; height: 48px; }
   .btn-mic.listening { background: #ff4d4d; color: #fff; }
   .btn:disabled { opacity: 0.5; cursor: default; }
-  .office-grid { background: #f4f3f8; border-radius: 16px; padding: 22px; }
+
+  .office-grid { background: linear-gradient(#f4f3f8, #ecebf5); border-radius: 16px;
+    padding: 26px; position: relative; overflow: hidden; }
   .desk { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 16px;
-    text-align: center; transition: border 0.2s, box-shadow 0.2s; }
-  .desk.active { border-color: #5b4ddb; box-shadow: 0 0 0 3px rgba(91,77,219,0.15); }
-  .avatar { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 10px;
-    display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    text-align: center; transition: transform .25s, box-shadow .25s, border-color .25s; position: relative; }
+  .desk.active { border-color: #5b4ddb; box-shadow: 0 6px 22px rgba(91,77,219,0.22);
+    transform: translateY(-4px); }
+  .avatar { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform .25s; }
+  .desk.active .avatar { animation: bob .9s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
   .desk .role { font-weight: 600; font-size: 15px; }
   .desk .sub { font-size: 12px; color: #888; }
   .desk .pill { display: inline-block; margin-top: 8px; font-size: 11px; padding: 3px 10px;
     border-radius: 99px; background: #eee; color: #666; }
-  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
-  .arrow-down { text-align: center; color: #bbb; font-size: 20px; margin: 6px 0; }
-  .note { font-size: 13px; color: #999; margin-top: 14px; text-align: center; }
+  .desk.active .pill { background: #ede9ff; color: #5b4ddb; }
+  .speech { position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: #1c1c1c; color: #fff; font-size: 11px; padding: 4px 10px; border-radius: 10px;
+    white-space: nowrap; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .desk.active .speech { opacity: 1; }
+  .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 30px; }
+  .coo-wrap { display: flex; justify-content: center; }
+  .arrow-down { text-align: center; color: #b0a8e0; font-size: 22px; margin: 8px 0; }
+  .token { position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: #5b4ddb; opacity: 0; pointer-events: none; z-index: 5; }
+  .token.fly { animation: fly 1s ease-in-out forwards; }
+  @keyframes fly { 0% { opacity: 1; } 100% { opacity: 0; } }
+  .note { font-size: 13px; color: #999; margin-top: 16px; text-align: center; }
+  .day-head { font-size: 13px; font-weight: 600; color: #5b4ddb; margin: 18px 0 8px;
+    border-bottom: 1px solid #e5e5e5; padding-bottom: 4px; }
+  .hist-row { font-size: 13px; line-height: 1.5; margin: 6px 0; padding: 8px 10px;
+    border-radius: 8px; background: #fff; border: 1px solid #eee; white-space: pre-wrap; }
+  .hist-agent { font-weight: 600; font-size: 11px; text-transform: uppercase; color: #888; }
+  .refresh-btn { background: none; border: 1px solid #ccc; border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; font-size: 13px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -70,50 +95,61 @@
   <div class="tabs">
     <button class="tab active" data-panel="chat">Chat</button>
     <button class="tab" data-panel="office">Office</button>
+    <button class="tab" data-panel="history">History</button>
   </div>
 
   <div class="panel active" id="panel-chat">
     <div id="chat-log"></div>
     <div class="input-row">
       <button class="btn btn-mic" id="mic" title="Click and speak">&#127908;</button>
-      <input id="chat-box" placeholder="Give your COO a goal..." />
+      <textarea id="chat-box" rows="2" placeholder="Give your COO a goal..."></textarea>
       <button class="btn btn-send" id="send">Send</button>
     </div>
     <div class="note" id="mic-note"></div>
   </div>
 
   <div class="panel" id="panel-office">
-    <div class="office-grid">
-      <div class="desk active" id="desk-coo" style="max-width:240px;margin:0 auto;">
-        <div class="avatar" style="background:#ede9ff;">&#128104;&#8205;&#128188;</div>
-        <div class="role">COO</div>
-        <div class="sub">Runs the company</div>
-        <div class="pill" id="pill-coo">online</div>
+    <div class="office-grid" id="office-grid">
+      <div class="coo-wrap">
+        <div class="desk active" id="desk-coo" style="width:240px;">
+          <div class="speech" id="speech-coo">online</div>
+          <div class="avatar" style="background:#ede9ff;">&#128104;&#8205;&#128188;</div>
+          <div class="role">COO</div>
+          <div class="sub">Runs the company</div>
+          <div class="pill" id="pill-coo">online</div>
+        </div>
       </div>
       <div class="arrow-down">&#8595;</div>
       <div class="team-row">
         <div class="desk" id="desk-rnd">
+          <div class="speech" id="speech-rnd">researching</div>
           <div class="avatar" style="background:#faece7;">&#128161;</div>
           <div class="role">R&amp;D</div>
           <div class="sub">Finds what sells</div>
           <div class="pill" id="pill-rnd">idle</div>
         </div>
         <div class="desk" id="desk-engineer">
+          <div class="speech" id="speech-engineer">designing</div>
           <div class="avatar" style="background:#e1f5ee;">&#128296;</div>
           <div class="role">Engineer</div>
           <div class="sub">Designs products</div>
           <div class="pill" id="pill-engineer">idle</div>
         </div>
         <div class="desk" id="desk-marketing">
+          <div class="speech" id="speech-marketing">writing</div>
           <div class="avatar" style="background:#e6f1fb;">&#128226;</div>
           <div class="role">Marketing</div>
           <div class="sub">Writes listings</div>
           <div class="pill" id="pill-marketing">idle</div>
         </div>
       </div>
-      <div class="note">Give the COO a goal in the Chat tab. It will propose
-        steps for you to approve, and the desks light up as each agent works.</div>
+      <div class="note">Give the COO a goal in the Chat tab. Desks come alive as each agent works.</div>
     </div>
+  </div>
+
+  <div class="panel" id="panel-history">
+    <button class="refresh-btn" id="hist-refresh">&#8635; Refresh history</button>
+    <div id="history-log"><div class="note">Loading history...</div></div>
   </div>
 </div>
 
@@ -155,22 +191,48 @@
       app.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
       t.classList.add("active");
       app.querySelector("#panel-" + t.dataset.panel).classList.add("active");
+      if (t.dataset.panel === "history") loadHistory();
     }));
 
     const log = app.querySelector("#chat-log");
     const box = app.querySelector("#chat-box");
     const send = app.querySelector("#send");
-
     const names = { coo: "COO", rnd: "R&D", engineer: "Engineer", marketing: "Marketing" };
 
-    function setDesk(agent, state) {
-      const desk = app.querySelector("#desk-" + agent);
-      const pill = app.querySelector("#pill-" + agent);
-      if (pill) pill.textContent = state;
-      if (!desk) return;
+    function flyToken(toAgent) {
+      const grid = app.querySelector("#office-grid");
+      const cooDesk = app.querySelector("#desk-coo");
+      const target = app.querySelector("#desk-" + toAgent);
+      if (!grid || !cooDesk || !target) return;
+      const g = grid.getBoundingClientRect();
+      const a = cooDesk.getBoundingClientRect();
+      const b = target.getBoundingClientRect();
+      const tok = document.createElement("div");
+      tok.className = "token";
+      grid.appendChild(tok);
+      const x0 = a.left - g.left + a.width/2, y0 = a.top - g.top + a.height;
+      const x1 = b.left - g.left + b.width/2, y1 = b.top - g.top;
+      tok.style.left = x0 + "px"; tok.style.top = y0 + "px";
+      tok.animate([
+        { transform: "translate(0,0)", opacity: 1 },
+        { transform: "translate(" + (x1-x0) + "px," + (y1-y0) + "px)", opacity: 0 }
+      ], { duration: 900, easing: "ease-in-out" });
+      setTimeout(() => tok.remove(), 950);
+    }
+
+    function setActive(agent) {
       app.querySelectorAll(".desk").forEach(d => d.classList.remove("active"));
-      if (state === "working" || state === "thinking") desk.classList.add("active");
-      else app.querySelector("#desk-coo").classList.add("active");
+      const d = app.querySelector("#desk-" + agent);
+      if (d) d.classList.add("active");
+    }
+    function setPill(agent, text) {
+      const p = app.querySelector("#pill-" + agent);
+      if (p) p.textContent = text;
+    }
+    function resetDesks() {
+      ["rnd","engineer","marketing"].forEach(a => setPill(a, "idle"));
+      setPill("coo", "online");
+      setActive("coo");
     }
 
     function add(text, who) {
@@ -198,16 +260,14 @@
       wrap.appendChild(approve); wrap.appendChild(skip);
       log.appendChild(wrap);
       log.scrollTop = log.scrollHeight;
-
-      approve.addEventListener("click", async () => {
-        wrap.remove();
-        await runApproval(delegation);
-      });
+      approve.addEventListener("click", async () => { wrap.remove(); await runApproval(delegation); });
       skip.addEventListener("click", () => { wrap.remove(); });
     }
 
     async function runApproval(delegation) {
-      setDesk(delegation.to, "working");
+      flyToken(delegation.to);
+      setActive(delegation.to);
+      setPill(delegation.to, "working");
       const ph = add(names[delegation.to] + " is working...", delegation.to);
       send.disabled = true;
       try {
@@ -220,14 +280,12 @@
         if (data.error) { add(data.error, "coo"); }
         else {
           add(data.workerReply, delegation.to);
-          setDesk("coo", "thinking");
+          setActive("coo"); setPill("coo", "reviewing");
           add(data.cooReply, "coo");
           if (data.delegation) showApproval(data.delegation);
         }
       } catch (e) { ph.remove(); add("Something went wrong running that step.", "coo"); }
-      setDesk("coo", "online");
-      ["rnd","engineer","marketing"].forEach(a => setDesk(a, "idle"));
-      app.querySelector("#desk-coo").classList.add("active");
+      resetDesks();
       send.disabled = false;
     }
 
@@ -237,7 +295,7 @@
       add(message, "you");
       box.value = "";
       send.disabled = true;
-      setDesk("coo", "thinking");
+      setActive("coo"); setPill("coo", "thinking");
       const ph = add("COO is thinking...", "coo");
       try {
         const res = await fetch(SERVER_URL + "/coo", {
@@ -249,12 +307,14 @@
         add(data.reply || data.error || "No response.", "coo");
         if (data.delegation) showApproval(data.delegation);
       } catch (e) { ph.remove(); add("Could not reach the server.", "coo"); }
-      setDesk("coo", "online");
+      setPill("coo", "online");
       send.disabled = false;
     }
 
     send.addEventListener("click", ask);
-    box.addEventListener("keydown", e => { if (e.key === "Enter") ask(); });
+    box.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); }
+    });
 
     const mic = app.querySelector("#mic");
     const micNote = app.querySelector("#mic-note");
@@ -271,6 +331,38 @@
       recog.onerror = () => { micNote.textContent = "Didn't catch that. Try again."; };
       recog.onresult = (ev) => { box.value = ev.results[0][0].transcript; ask(); };
     }
+
+    async function loadHistory() {
+      const hist = app.querySelector("#history-log");
+      hist.innerHTML = '<div class="note">Loading...</div>';
+      try {
+        const res = await fetch(SERVER_URL + "/memory?password=" + encodeURIComponent(PORTAL_PASSWORD));
+        const data = await res.json();
+        const items = (data.history || []);
+        if (!items.length) { hist.innerHTML = '<div class="note">No history yet.</div>'; return; }
+        const byDay = {};
+        items.forEach(it => {
+          const day = (it.time || "").slice(0, 10) || "Earlier";
+          (byDay[day] = byDay[day] || []).push(it);
+        });
+        hist.innerHTML = "";
+        Object.keys(byDay).sort().reverse().forEach(day => {
+          const h = document.createElement("div");
+          h.className = "day-head"; h.textContent = day;
+          hist.appendChild(h);
+          byDay[day].forEach(it => {
+            const row = document.createElement("div");
+            row.className = "hist-row";
+            const who = it.agent ? (names[it.agent] || it.agent) : "Owner";
+            const ownerLine = it.user ? "Owner: " + it.user + "\n" : "";
+            row.innerHTML = '<span class="hist-agent">' + who + '</span>\n';
+            row.appendChild(document.createTextNode(ownerLine + (it.text || it.coo || "")));
+            hist.appendChild(row);
+          });
+        });
+      } catch (e) { hist.innerHTML = '<div class="note">Could not load history.</div>'; }
+    }
+    app.querySelector("#hist-refresh").addEventListener("click", loadHistory);
 
     add("Hi - I'm your COO. Give me a goal, like \"find a product we could sell to dog owners,\" and I'll put the team to work.", "coo");
   }
