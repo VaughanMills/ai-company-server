@@ -30,9 +30,18 @@ import Anthropic from "@anthropic-ai/sdk";
 
 // --- Configuration --------------------------------------------------------
 
+// Which AI provider powers each agent: "claude" or "grok".
+// R&D is on Grok as a test; the rest stay on Claude. Flip any back anytime.
+const PROVIDER = {
+  coo: "claude",
+  rnd: "grok",
+  engineer: "claude",
+  marketing: "claude",
+};
+
 const MODELS = {
   coo: "claude-sonnet-4-6",
-  rnd: "claude-sonnet-4-6",
+  rnd: "grok-4.3",
   engineer: "claude-sonnet-4-6",
   marketing: "claude-sonnet-4-6",
 };
@@ -153,13 +162,17 @@ function recentContext() {
 }
 
 async function runAgent(agent, taskText) {
-  const tools = WEB_SEARCH[agent]
-    ? [{ type: "web_search_20250305", name: "web_search" }]
-    : undefined;
-
   const context = recentContext();
   const userContent =
     (context ? `Company memory so far:\n${context}\n\n---\n\n` : "") + taskText;
+
+  if (PROVIDER[agent] === "grok") {
+    return runGrokAgent(agent, userContent);
+  }
+
+  const tools = WEB_SEARCH[agent]
+    ? [{ type: "web_search_20250305", name: "web_search" }]
+    : undefined;
 
   const response = await anthropic.messages.create({
     model: MODELS[agent],
@@ -173,6 +186,54 @@ async function runAgent(agent, taskText) {
     .map(b => (b.type === "text" ? b.text : ""))
     .join("")
     .trim();
+}
+
+// Calls Grok (xAI) via its OpenAI-compatible Responses endpoint.
+// Uses Grok's own web_search tool for live data when the agent needs it.
+async function runGrokAgent(agent, userContent) {
+  if (!process.env.XAI_API_KEY) {
+    return "[R&D is set to Grok, but the server is missing its XAI_API_KEY. Add it in Render.]";
+  }
+  const body = {
+    model: MODELS[agent],
+    input: [
+      { role: "system", content: PROMPTS[agent] },
+      { role: "user", content: userContent },
+    ],
+  };
+  if (WEB_SEARCH[agent]) body.tools = [{ type: "web_search" }];
+
+  const res = await fetch("https://api.x.ai/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + process.env.XAI_API_KEY,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("Grok error:", res.status, errText);
+    return "[Grok had trouble responding. Status " + res.status + ". You can switch R&D back to Claude in the server config.]";
+  }
+
+  const data = await res.json();
+  // The Responses API returns output items; pull the text out of them.
+  let out = "";
+  if (typeof data.output_text === "string") {
+    out = data.output_text;
+  } else if (Array.isArray(data.output)) {
+    for (const item of data.output) {
+      if (item.content && Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (c.type === "output_text" && c.text) out += c.text;
+          else if (typeof c.text === "string") out += c.text;
+        }
+      }
+    }
+  }
+  return (out || "[Grok returned an empty response.]").trim();
 }
 
 function parseDelegation(text) {
